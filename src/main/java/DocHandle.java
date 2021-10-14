@@ -10,36 +10,33 @@ public class DocHandle {
 
     private final PostingsHandle postingsHandle;
 
-    public DocHandle() {
+    public DocHandle() throws IOException {
         postingsHandle = new PostingsHandle();
     }
 
     public void readFile(String filePath, int bufferSize) {
-//        byte [] buffer = new byte[1024 * 16];
-        byte [] buffer = new byte[bufferSize];
+        byte[] buffer = new byte[bufferSize];
         boolean isDoc = false;
         StringBuilder docBuffer = new StringBuilder();
         try {
-//            InputStream inputStream = new FileInputStream("msmarco-docs.trec");
             InputStream inputStream = new FileInputStream(filePath);
             int i = 0;
             int docId = 0;
             while (inputStream.read(buffer) != -1) {
                 String s = new String(buffer, StandardCharsets.UTF_8);
                 String[] lines = s.split("\n");
-                for(String line : lines) {
-                    if(line.equals("<DOC>")){
+                for (String line : lines) {
+                    if (line.equals("<DOC>")) {
                         isDoc = true;
                         docId += 1;
                     }
-                    if(isDoc) {
+                    if (isDoc) {
                         docBuffer.append(line).append(" ");
                     }
-                    if(line.equals("</DOC>")){
+                    if (line.equals("</DOC>")) {
                         docBuffer.append(line);
                         String docText = parseDoc(docBuffer.toString());
                         postingsHandle.buildDocPosingIndex(docId, docText);
-//                        System.out.println(docId + " " + docText);
                         docBuffer = new StringBuilder();
                         isDoc = false;
                     }
@@ -47,8 +44,8 @@ public class DocHandle {
                 postingsHandle.writeMapToFile(i);
                 i += 1;
             }
-
-        }  catch (IOException ex) {
+            postingsHandle.closePageTableWriter();
+        } catch (IOException ex) {
             ex.printStackTrace();
         }
     }
@@ -59,9 +56,14 @@ public class DocHandle {
     }
 
     public static void main(String[] args) {
-        DocHandle docHandle = new DocHandle();
-        int bufferSize = 1024 * 1024 * 128;
-        String filePath = "msmarco-docs.trec";
-        docHandle.readFile(filePath, bufferSize);
+        try {
+            DocHandle docHandle = new DocHandle();
+            int bufferSize = 1024 * 1024 * 128;
+            String filePath = "msmarco-docs.trec";
+            docHandle.readFile(filePath, bufferSize);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 }

@@ -11,14 +11,14 @@ public class PartitionFile {
 
     public PartitionFile(String fileName) throws FileNotFoundException {
         this.fileName = fileName;
-        this.fileNo = Integer.parseInt(fileName.split("\\.")[0].substring(3));
+        this.fileNo = Integer.parseInt(fileName.split("\\.")[0].substring(4));
         this.inputStream = new FileInputStream(fileName);
         this.bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
     }
 
     public boolean update() throws IOException {
         String newLine = bufferedReader.readLine();
-        if(newLine == null) {
+        if (newLine == null) {
             return false;
         }
         String[] tempArray = newLine.split("-");

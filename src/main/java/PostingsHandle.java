@@ -13,11 +13,18 @@ public class PostingsHandle {
     private final String regex = "[A-Za-z]+[0-9]*$";
     private final Pattern p = Pattern.compile(regex);
     private final Map<String, StringBuilder> word2DocIdFreqListMap = new HashMap<>();
+    private final BufferedWriter pageTableWriter;
 
-    public void buildDocPosingIndex(int docId, String docText) {
+    public PostingsHandle() throws IOException {
+        this.pageTableWriter = new BufferedWriter(new FileWriter(FileUtils.PAGE_TABLE_FILE_PATH));
+    }
+
+    public void buildDocPosingIndex(int docId, String docText) throws IOException {
         String[] docTextArray = docText.split(" ");
         Map<String, Integer> word2FreqMap = new HashMap<>();
         String curWord;
+        String website = docTextArray[0];
+        pageTableWriter.write(docId + " " + website + "\n");
         for(int i = 1; i < docTextArray.length; i ++) {
             curWord = docTextArray[i];
             // if the length of word more than 20. I omit it.
@@ -26,6 +33,7 @@ public class PostingsHandle {
             }
             Matcher isValid = p.matcher(curWord);
             if(isValid.matches()) {
+                curWord = curWord.toLowerCase();
                 word2FreqMap.put(curWord, word2FreqMap.getOrDefault(curWord, 0) + 1);
             }
         }
@@ -35,26 +43,28 @@ public class PostingsHandle {
             }
             word2DocIdFreqListMap.get(word).append(docId).append(":").append(word2FreqMap.get(word)).append("#");
         }
-
     }
 
     public void writeMapToFile(int fileId){
         List<String> res = new ArrayList<>();
         for(String word: word2DocIdFreqListMap.keySet()) {
             res.add(word + "-" + word2DocIdFreqListMap.get(word) + "\n");
-            System.out.println(word + "-" + word2DocIdFreqListMap.get(word) + "\n");
+//            System.out.println(word + "-" + word2DocIdFreqListMap.get(word) + "\n");
         }
         word2DocIdFreqListMap.clear();
         try {
-            BufferedWriter out = new BufferedWriter(new FileWriter(fileId + "res.txt"));
+            BufferedWriter out = new BufferedWriter(new FileWriter(fileId + FileUtils.PARTITION_FILE_PATH));
             for(String temp: res) {
                 out.write(temp);
             }
             out.close();
-            System.out.println("文件创建成功！");
         } catch (IOException e) {
             System.out.println("");
         }
 
+    }
+
+    public void closePageTableWriter() throws IOException {
+        pageTableWriter.close();
     }
 }

@@ -1,11 +1,11 @@
 i=0
-for file in ls grep *res.txt
+for file in ls grep *part.txt
 do
     if test -f "$file"
       then
-#          sort "$file" > "res${file%res.txt}.txt"
+          sort -f "$file" > "part${file%part.txt}.txt"
 #          echo "res${file%res.txt}.txt"
-          file_array[$i]=res${file%res.txt}.txt
+          file_array[$i]=part${file%part.txt}.txt
           i=$(($i + 1))
     fi
 done
