@@ -1,4 +1,6 @@
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Test {
 
@@ -75,6 +77,19 @@ public class Test {
             return 0;
         }
 
+    }
+
+    public void convert() {
+        List<String> itemList = new ArrayList<>();
+        itemList.add("item1");
+        itemList.add("item2");
+        itemList.add("item3");
+
+        String[] itemsArray = new String[itemList.size()];
+        itemsArray = itemList.toArray(itemsArray);
+
+        for(String s : itemsArray)
+            System.out.println(s);
     }
 
 
