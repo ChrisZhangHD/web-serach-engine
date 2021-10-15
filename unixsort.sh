@@ -4,9 +4,9 @@ do
     if test -f "$file"
       then
           sort -f "$file" > "part${file%part.txt}.txt"
-#          echo "res${file%res.txt}.txt"
           file_array[$i]=part${file%part.txt}.txt
           i=$(($i + 1))
     fi
 done
 echo "${file_array[*]}"
+

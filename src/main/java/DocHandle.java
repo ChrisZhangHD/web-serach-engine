@@ -54,16 +54,4 @@ public class DocHandle {
         Document doc = Jsoup.parse(html);
         return doc.select("TEXT").text();
     }
-
-    public static void main(String[] args) {
-        try {
-            DocHandle docHandle = new DocHandle();
-            int bufferSize = 1024 * 1024 * 128;
-            String filePath = "msmarco-docs.trec";
-            docHandle.readFile(filePath, bufferSize);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-    }
 }

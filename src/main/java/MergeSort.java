@@ -26,7 +26,7 @@ public class MergeSort {
             fileNameArray = line.split(" ");
             input.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("IOE");
         }
     }
 
@@ -44,7 +44,6 @@ public class MergeSort {
                 } else {
                     if (!curWord.equals(prevWord)) {
                         String newIndex = prevWord + "-" + prevDocIdFreq.toString() + "\n";
-                        System.out.println(prevWord);
                         out.write(newIndex);
                         prevWord = curWord;
                         prevDocIdFreq.setLength(0);
@@ -61,7 +60,7 @@ public class MergeSort {
             out.write(newIndex);
             out.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("IOE");
         }
 
 
@@ -81,18 +80,4 @@ public class MergeSort {
             }
         }
     }
-
-    public String[] getFileNameArray() {
-        return fileNameArray;
-    }
-
-    public static void main(String[] args) {
-        MergeSort mergeSort = new MergeSort();
-        mergeSort.sortSplitFile();
-        String[] fileNameArray = mergeSort.getFileNameArray();
-        System.out.println(fileNameArray.length);
-        mergeSort.putPartitionFileToPq();
-        mergeSort.mergePartitionFile();
-    }
-
 }

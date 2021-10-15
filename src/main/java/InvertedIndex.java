@@ -1,5 +1,3 @@
-import com.oracle.tools.packager.Log;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,9 +5,9 @@ import java.util.List;
 public class InvertedIndex {
 
     private final byte[] buffer;
-    private int invertedListStartIndex = 0;
-    private String lexiconFileName = "lexicon.txt";
-    private final String invertedListFileName = "invertedList.bin";
+    private long invertedListStartIndex = 0L;
+    private final String lexiconFileName = FileUtils.LEXICON_FILE_PATH;
+    private final String invertedListFileName = FileUtils.INVERTED_LIST_BIN_FILE_PATH;
     BufferedWriter lexiconWriter;
     private OutputStream invertedListOutputStream;
 
@@ -165,13 +163,6 @@ public class InvertedIndex {
             arr[i] = list.get(i);
         }
         return arr;
-    }
-
-    public static void main(String[] args) {
-        int bufferSize = 1024 * 1024 * 128;
-        InvertedIndex invertedIndex = new InvertedIndex(bufferSize);
-        invertedIndex.createBinFile();
-        invertedIndex.readFileByLine("aaa.txt");
     }
 
 }

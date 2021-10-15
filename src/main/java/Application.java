@@ -8,7 +8,7 @@ public class Application {
             FileUtils.createFile(FileUtils.PAGE_TABLE_FILE_PATH);
             DocHandle docHandle = new DocHandle();
             int bufferSize = 1024 * 1024 * 128;
-            String filePath = "msmarco-docs.trec";
+            String filePath = FileUtils.DATASET_FILE_PATH;
             docHandle.readFile(filePath, bufferSize);
             System.out.println("split success");
 
@@ -24,7 +24,7 @@ public class Application {
             InvertedIndex invertedIndex = new InvertedIndex(bufferSize);
             invertedIndex.createBinFile();
             invertedIndex.readFileByLine(FileUtils.MERGE_SORT_FILE_PATH);
-            System.out.println("build success.");
+            System.out.println("build success");
             long endTime = System.currentTimeMillis();
             System.out.println("Run Time： " + (endTime - startTime) / 60000 + "m");
 

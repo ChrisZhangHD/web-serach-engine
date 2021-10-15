@@ -27,7 +27,7 @@ public class PostingsHandle {
         pageTableWriter.write(docId + " " + website + "\n");
         for(int i = 1; i < docTextArray.length; i ++) {
             curWord = docTextArray[i];
-            // if the length of word more than 20. I omit it.
+            // if the length of word more than 20. Omit it.
             if (curWord.length() > 20){
                 continue;
             }
@@ -49,7 +49,6 @@ public class PostingsHandle {
         List<String> res = new ArrayList<>();
         for(String word: word2DocIdFreqListMap.keySet()) {
             res.add(word + "-" + word2DocIdFreqListMap.get(word) + "\n");
-//            System.out.println(word + "-" + word2DocIdFreqListMap.get(word) + "\n");
         }
         word2DocIdFreqListMap.clear();
         try {
@@ -59,7 +58,7 @@ public class PostingsHandle {
             }
             out.close();
         } catch (IOException e) {
-            System.out.println("");
+            System.out.println("IOE");
         }
 
     }
