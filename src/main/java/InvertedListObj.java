@@ -18,7 +18,7 @@ public class InvertedListObj {
         this.index = 0;
         this.buffer = buffer;
         postingCnt = varByteDecode();
-        blockCnt = postingCnt % BLOCK_SIZE == 0? postingCnt / 64 : postingCnt / 64 + 1;
+        blockCnt = postingCnt % BLOCK_SIZE == 0 ? postingCnt / 64 : postingCnt / 64 + 1;
         docIdBlockSizeArray = new int[blockCnt];
         freqBlockSizeArray = new int[blockCnt];
         lastDocIdBlockArray = new int[blockCnt];
@@ -27,16 +27,16 @@ public class InvertedListObj {
 
     private void setMetadata() {
         int allDocIdBlockSize = 0;
-        for(int i = 0; i < blockCnt; i ++) {
+        for (int i = 0; i < blockCnt; i++) {
             int num = varByteDecode();
             docIdBlockSizeArray[i] = num;
             allDocIdBlockSize += num;
         }
-        for(int i = 0; i < blockCnt; i ++) {
+        for (int i = 0; i < blockCnt; i++) {
             int num = varByteDecode();
             freqBlockSizeArray[i] = num;
         }
-        for(int i = 0; i < blockCnt; i ++) {
+        for (int i = 0; i < blockCnt; i++) {
             int num = varByteDecode();
             lastDocIdBlockArray[i] = num;
         }
@@ -65,7 +65,7 @@ public class InvertedListObj {
         index = start;
         int length = block == blockCnt - 1 ? postingCnt - 64 * block : 64;
         docIdBlockArray = new int[length];
-        for(int i = 0; i < length; i ++) {
+        for (int i = 0; i < length; i++) {
             docIdBlockArray[i] = varByteDecode();
         }
         return docIdBlockArray;
