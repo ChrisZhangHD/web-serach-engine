@@ -75,7 +75,13 @@ public class InvertedListObj {
         this.docIdBlockArray = docIdBlockArray;
     }
 
-    public int[] getFreqBlockArray() {
+    public int[] getFreqBlockArray(int start, int block) {
+        index = start;
+        int length = block == blockCnt - 1 ? postingCnt - 64 * block : 64;
+        freqBlockArray = new int[length];
+        for (int i = 0; i < length; i++) {
+            freqBlockArray[i] = varByteDecode();
+        }
         return freqBlockArray;
     }
 

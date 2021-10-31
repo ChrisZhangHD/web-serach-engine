@@ -4,8 +4,17 @@ import java.util.Map;
 
 public class QueryProcess {
 
-    private final Map<String, String[]> lexiconMap = new HashMap<>();
-    private static final int MAX_DOC_ID = 3222846;
+    private final Map<String, String[]> lexiconMap;
+    private final int maxDocId;
+    private final int avgDocLength;
+
+    public QueryProcess() {
+        lexiconMap = new HashMap<>();
+        maxDocId = FileUtils.getDocCnt();
+        String baseInfo = FileUtils.getLineFromFile(FileUtils.PAGE_TABLE_FILE_PATH, maxDocId + 1);
+        long allDocLength = Long.parseLong(baseInfo.split(" ")[1]);
+        avgDocLength = (int) allDocLength / maxDocId;
+    }
 
     public void buildLexiconMap(String line) {
         String[] item = line.split(" ");
@@ -38,7 +47,9 @@ public class QueryProcess {
                 System.out.println(nextGEQ(invertedListObj, 1991246));
                 System.out.println(nextGEQ(invertedListObj, 669294));
                 System.out.println(nextGEQ(invertedListObj, 669000));
-                System.out.println(MAX_DOC_ID == nextGEQ(invertedListObj, 3219839));
+                System.out.println(getFreq(invertedListObj, 657831));
+                System.out.println(maxDocId == nextGEQ(invertedListObj, 3222608));
+                System.out.println(getScore(invertedListObj, 669000));
             }
 
         } catch (IOException e) {
@@ -49,7 +60,7 @@ public class QueryProcess {
     public int nextGEQ(InvertedListObj invertedListObj, int k) {
         int[] lastDocIdBlockArray = invertedListObj.getLastDocIdBlockArray();
         if (k > lastDocIdBlockArray[lastDocIdBlockArray.length - 1]) {
-            return MAX_DOC_ID;
+            return maxDocId;
         }
         int[] docIdBlockSizeArray = invertedListObj.getDocIdBlockSizeArray();
         int block = binarySearch(lastDocIdBlockArray, k);
@@ -76,13 +87,48 @@ public class QueryProcess {
         return left;
     }
 
-
-    public void closeList() {
-
+    public int[] getBlockAndIndex(InvertedListObj invertedListObj, int docId) {
+        int[] lastDocIdBlockArray = invertedListObj.getLastDocIdBlockArray();
+        int[] docIdBlockSizeArray = invertedListObj.getDocIdBlockSizeArray();
+        int block = binarySearch(lastDocIdBlockArray, docId);
+        int offset = 0;
+        for (int i = 0; i < block; i++) {
+            offset += docIdBlockSizeArray[i];
+        }
+        int docIdStartIndex = invertedListObj.getDocIdStartIndex() + offset;
+        int[] docIdBlockArray = invertedListObj.getDocIdBlockArray(docIdStartIndex, block);
+        int docIdIndex = binarySearch(docIdBlockArray, docId);
+        return new int[]{block, docIdIndex};
     }
 
-    public void getScore() {
+    public int getFreq(InvertedListObj invertedListObj, int docId) {
+        int[] blockAndIndexArray = getBlockAndIndex(invertedListObj, docId);
+        int block = blockAndIndexArray[0];
+        int docIdIndex = blockAndIndexArray[1];
 
+        int[] freqBlockSizeArray = invertedListObj.getFreqBlockSizeArray();
+        int offset = 0;
+        for (int i = 0; i < block; i++) {
+            offset += freqBlockSizeArray[i];
+        }
+        int freqStartIndex = invertedListObj.getFreqStartIndex() + offset;
+        int[] freqBlockArray = invertedListObj.getFreqBlockArray(freqStartIndex, block);
+        return freqBlockArray[docIdIndex];
+    }
+
+
+    public void closeList(InvertedListObj invertedListObj) {
+        invertedListObj = null;
+    }
+
+    public double getScore(InvertedListObj invertedListObj, int docId) {
+        String basicInfo = FileUtils.getLineFromFile(FileUtils.PAGE_TABLE_FILE_PATH, docId);
+        int docLen = Integer.parseInt(basicInfo.split(" ")[2]);
+
+        double K = 1.2 * (0.25 + 0.75 * (1.0 * docLen / avgDocLength));
+        int ft = invertedListObj.getPostingCnt();
+        int fdt = getFreq(invertedListObj, docId);
+        return Math.log((maxDocId - ft + 0.5) / (ft + 0.5)) * ((2.2 * fdt) / (K + fdt));
     }
 
     public static void main(String[] args) {

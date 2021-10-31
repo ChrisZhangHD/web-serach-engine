@@ -21,14 +21,12 @@ public class DocHandle {
         try {
             InputStream inputStream = new FileInputStream(filePath);
             int i = 0;
-            int docId = 0;
             while (inputStream.read(buffer) != -1) {
                 String s = new String(buffer, StandardCharsets.UTF_8);
                 String[] lines = s.split("\n");
                 for (String line : lines) {
                     if (line.equals("<DOC>")) {
                         isDoc = true;
-                        docId += 1;
                     }
                     if (isDoc) {
                         docBuffer.append(line).append(" ");
@@ -36,7 +34,7 @@ public class DocHandle {
                     if (line.equals("</DOC>")) {
                         docBuffer.append(line);
                         String docText = parseDoc(docBuffer.toString());
-                        postingsHandle.buildDocPosingIndex(docId, docText);
+                        postingsHandle.buildDocPosingIndex(docText);
                         docBuffer = new StringBuilder();
                         isDoc = false;
                     }

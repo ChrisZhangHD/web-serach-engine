@@ -14,46 +14,54 @@ public class PostingsHandle {
     private final Pattern p = Pattern.compile(regex);
     private final Map<String, StringBuilder> word2DocIdFreqListMap = new HashMap<>();
     private final BufferedWriter pageTableWriter;
+    private long allDocLength = 0L;
+    private int docId = 0;
 
     public PostingsHandle() throws IOException {
         this.pageTableWriter = new BufferedWriter(new FileWriter(FileUtils.PAGE_TABLE_FILE_PATH));
     }
 
-    public void buildDocPosingIndex(int docId, String docText) throws IOException {
+    public void buildDocPosingIndex(String docText) throws IOException {
         String[] docTextArray = docText.split(" ");
+        int docLength = docTextArray.length - 1;
+        if (docLength == 0) {
+            return;
+        }
+        docId += 1;
         Map<String, Integer> word2FreqMap = new HashMap<>();
         String curWord;
         String website = docTextArray[0];
-        pageTableWriter.write(docId + " " + website + "\n");
-        for(int i = 1; i < docTextArray.length; i ++) {
+        allDocLength += docLength;
+        pageTableWriter.write(docId + " " + website + " " + docLength + "\n");
+        for (int i = 1; i < docTextArray.length; i++) {
             curWord = docTextArray[i];
             // if the length of word more than 20. Omit it.
-            if (curWord.length() > 20){
+            if (curWord.length() > 20) {
                 continue;
             }
             Matcher isValid = p.matcher(curWord);
-            if(isValid.matches()) {
+            if (isValid.matches()) {
                 curWord = curWord.toLowerCase();
                 word2FreqMap.put(curWord, word2FreqMap.getOrDefault(curWord, 0) + 1);
             }
         }
-        for(String word: word2FreqMap.keySet()){
-            if(!word2DocIdFreqListMap.containsKey(word)){
+        for (String word : word2FreqMap.keySet()) {
+            if (!word2DocIdFreqListMap.containsKey(word)) {
                 word2DocIdFreqListMap.put(word, new StringBuilder());
             }
             word2DocIdFreqListMap.get(word).append(docId).append(":").append(word2FreqMap.get(word)).append("#");
         }
     }
 
-    public void writeMapToFile(int fileId){
+    public void writeMapToFile(int fileId) {
         List<String> res = new ArrayList<>();
-        for(String word: word2DocIdFreqListMap.keySet()) {
+        for (String word : word2DocIdFreqListMap.keySet()) {
             res.add(word + "-" + word2DocIdFreqListMap.get(word) + "\n");
         }
         word2DocIdFreqListMap.clear();
         try {
             BufferedWriter out = new BufferedWriter(new FileWriter(fileId + FileUtils.PARTITION_FILE_PATH));
-            for(String temp: res) {
+            for (String temp : res) {
                 out.write(temp);
             }
             out.close();
@@ -64,6 +72,7 @@ public class PostingsHandle {
     }
 
     public void closePageTableWriter() throws IOException {
+        pageTableWriter.write(docId + " " + allDocLength);
         pageTableWriter.close();
     }
 }

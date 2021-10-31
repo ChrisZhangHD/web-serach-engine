@@ -1,5 +1,7 @@
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 public class FileUtils {
 
@@ -17,5 +19,29 @@ public class FileUtils {
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
+    }
+
+    public static int getDocCnt() {
+        try {
+            Process process = Runtime.getRuntime().exec("wc -l " + PAGE_TABLE_FILE_PATH);
+            BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String result = input.readLine().trim();
+            return Integer.parseInt(result.split(" ")[0]);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    public static String getLineFromFile(String filePath, int line) {
+        try {
+            String command = "sed -n " + line + "p " + filePath;
+            Process process = Runtime.getRuntime().exec(command);
+            BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            return input.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 }
