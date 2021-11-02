@@ -5,18 +5,18 @@ public class InvertedListObj {
     private final byte[] buffer;
     private final int postingCnt;
     private final int blockCnt;
+    private final String word;
     private final int[] docIdBlockSizeArray;
     private final int[] freqBlockSizeArray;
     private final int[] lastDocIdBlockArray;
-    private int[] docIdBlockArray;
-    private int[] freqBlockArray;
     private int index;
     private int docIdStartIndex;
     private int freqStartIndex;
 
-    public InvertedListObj(byte[] buffer) {
+    public InvertedListObj(byte[] buffer, String word) {
         this.index = 0;
         this.buffer = buffer;
+        this.word = word;
         postingCnt = varByteDecode();
         blockCnt = postingCnt % BLOCK_SIZE == 0 ? postingCnt / 64 : postingCnt / 64 + 1;
         docIdBlockSizeArray = new int[blockCnt];
@@ -49,6 +49,10 @@ public class InvertedListObj {
         return postingCnt;
     }
 
+    public String getWord() {
+        return word;
+    }
+
     public int[] getDocIdBlockSizeArray() {
         return docIdBlockSizeArray;
     }
@@ -64,36 +68,24 @@ public class InvertedListObj {
     public int[] getDocIdBlockArray(int start, int block) {
         index = start;
         int length = block == blockCnt - 1 ? postingCnt - 64 * block : 64;
-        docIdBlockArray = new int[length];
+        int[] docIdBlockArray = new int[length];
         for (int i = 0; i < length; i++) {
             docIdBlockArray[i] = varByteDecode();
         }
         return docIdBlockArray;
     }
 
-    public void setDocIdBlockArray(int[] docIdBlockArray) {
-        this.docIdBlockArray = docIdBlockArray;
-    }
-
-    public int[] getFreqBlockArray(int start, int block) {
+    public int[] getFreqBlockArray(int start, int block){
         index = start;
         int length = block == blockCnt - 1 ? postingCnt - 64 * block : 64;
-        freqBlockArray = new int[length];
+        int[] freqBlockArray = new int[length];
         for (int i = 0; i < length; i++) {
             freqBlockArray[i] = varByteDecode();
         }
         return freqBlockArray;
     }
 
-    public void setFreqBlockArray(int[] freqBlockArray) {
-        this.freqBlockArray = freqBlockArray;
-    }
-
-    public void setIndex(int index) {
-        this.index = index;
-    }
-
-    public int varByteDecode() {
+    public int varByteDecode(){
         int val = 0, shift = 0;
         int b = buffer[index] & 255;
         while (b < 128) {
