@@ -172,16 +172,16 @@ public class QueryProcess {
                 /* docID is in intersection; now get all frequencies */
                 double score = 0;
                 DocObj docObj = new DocObj(docId, lps.length, pageWebSiteArray[docId]);
-                String[] docObjWords = docObj.getWords();
-                int[] docObjWordsFreq = docObj.getWordsFreq();
+                List<String> docObjWords = docObj.getWords();
+                List<Integer> docObjWordsFreq = docObj.getWordsFreq();
                 for (int i = 0; i < n; i++) {
                     int freq = getFreq(lps[i], docId);
                     score += getScore(lps[i], freq, docId);
                     /* compute BM25 score from frequencies and other data */
-                    docObjWords[i] = lps[i].getWord();
-                    docObjWordsFreq[i] = freq;
+                    docObjWords.add(lps[i].getWord());
+                    docObjWordsFreq.add(freq);
                 }
-                docObj.setScore(score);
+                docObj.addScore(score);
                 pq.add(docObj);
                 if (pq.size() > 10) {
                     pq.poll();
@@ -195,17 +195,63 @@ public class QueryProcess {
         }
     }
 
+    public void disjunctiveSearch(String query) {
+        String[] terms = query.split("\\+");
+        int n = terms.length;
+        InvertedListObj[] lps = new InvertedListObj[terms.length];
+        Map<Integer, DocObj> map = new HashMap<>();
+        for (int i = 0; i < n; i++) {
+            lps[i] = openList(terms[i]);
+            updateDocIdScoreMap(lps[i], map);
+        }
+        for (int key : map.keySet()) {
+            pq.add(map.get(key));
+            if (pq.size() > 10) {
+                pq.poll();
+            }
+        }
+
+    }
+
+    private void updateDocIdScoreMap(InvertedListObj invertedListObj, Map<Integer, DocObj> map) {
+        int blockCnt = invertedListObj.getBlockCnt();
+        int docIdStart = invertedListObj.getDocIdStartIndex();
+        int freqStart = invertedListObj.getFreqStartIndex();
+        int[] docIdBlockSizeArray = invertedListObj.getDocIdBlockSizeArray();
+        int[] freqBlockSizeArray = invertedListObj.getFreqBlockSizeArray();
+        String curWord = invertedListObj.getWord();
+        for (int i = 0; i < blockCnt; i++) {
+            int[] docIdArray = invertedListObj.getDocIdBlockArray(docIdStart, i);
+            int[] freqArray = invertedListObj.getFreqBlockArray(freqStart, i);
+            for (int j = 0; j < docIdArray.length; j++) {
+                int curDocId = docIdArray[j];
+                int curFreq = freqArray[j];
+                if (!map.containsKey(curDocId)) {
+                    DocObj docObj = new DocObj(curDocId, pageWebSiteArray[curDocId]);
+                    map.put(curDocId, docObj);
+                }
+                DocObj docObj = map.get(curDocId);
+                docObj.getWords().add(curWord);
+                docObj.getWordsFreq().add(curFreq);
+                double score = getScore(invertedListObj, curFreq, curDocId);
+                docObj.addScore(score);
+            }
+            docIdStart += docIdBlockSizeArray[i];
+            freqStart += freqBlockSizeArray[i];
+        }
+    }
+
     public void getTop10Res() {
         String[] results = new String[10];
         int index = results.length - 1;
         while (pq.size() > 0) {
             DocObj docObj = pq.poll();
             StringBuilder result = new StringBuilder(docObj.getDocId() + " " + docObj.getDocLink() + " " + (docObj.getScore()));
-            String[] docObjWords = docObj.getWords();
-            int[] docObjWordsFreq = docObj.getWordsFreq();
+            List<String> docObjWords = docObj.getWords();
+            List<Integer> docObjWordsFreq = docObj.getWordsFreq();
             result.append(" ( ");
-            for (int i = 0; i < docObjWords.length; i++) {
-                result.append(docObjWords[i]).append(":").append(docObjWordsFreq[i]).append(" ");
+            for (int i = 0; i < docObjWords.size(); i++) {
+                result.append(docObjWords.get(i)).append(":").append(docObjWordsFreq.get(i)).append(" ");
             }
             result.append(")");
             results[index] = result.toString();
@@ -214,16 +260,28 @@ public class QueryProcess {
         for (int i = 0; i < 10; i++) {
             System.out.println(results[i]);
         }
+        pq.clear();
     }
 
     public static void main(String[] args) {
+
         QueryProcess queryProcess = new QueryProcess();
         System.out.println("build success.");
-        long startTime = System.currentTimeMillis();
-        queryProcess.conjunctiveSearch("apple+iphone");
-//        queryProcess.conjunctiveSearch("brooklyn+park");
-        queryProcess.getTop10Res();
-        long endTime = System.currentTimeMillis();
-        System.out.println("Run Time： " + (endTime - startTime) + "ms");
+        while (true) {
+            Scanner scanner = new Scanner(System.in);
+            System.out.print("Input search mode (and / or): ");
+            String mode = scanner.nextLine();
+            System.out.print("Input key words: ");
+            String keywords = scanner.nextLine();
+            long startTime = System.currentTimeMillis();
+            if (mode.equals("and")) {
+                queryProcess.conjunctiveSearch(keywords);
+            } else {
+                queryProcess.disjunctiveSearch(keywords);
+            }
+            queryProcess.getTop10Res();
+            long endTime = System.currentTimeMillis();
+            System.out.println("Run Time： " + (endTime - startTime) + "ms");
+        }
     }
 }

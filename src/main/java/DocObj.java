@@ -1,22 +1,27 @@
+import java.util.ArrayList;
+import java.util.List;
+
 public class DocObj {
     private final int docId;
     private final String docLink;
-    private final int wordsCnt;
-    private final String[] words;
-    private final int[] wordsFreq;
+    private final List<String> words;
+    private final List<Integer> wordsFreq;
 
-    private double score;
+    private double score = 0;
 
     public DocObj(int docId, int cnt, String link) {
         this.docId = docId;
         this.docLink = link;
-        this.wordsCnt = cnt;
-        this.words = new String[wordsCnt];
-        this.wordsFreq = new int[wordsCnt];
+        this.words = new ArrayList<>(cnt);
+        this.wordsFreq = new ArrayList<>(cnt);
     }
 
-    public void setScore(double score) {
-        this.score = score;
+    public DocObj(int docId, String link) {
+        this(docId, 16, link);
+    }
+
+    public void addScore(double score) {
+        this.score += score;
     }
 
     public double getScore() {
@@ -31,11 +36,11 @@ public class DocObj {
         return docLink;
     }
 
-    public String[] getWords() {
+    public List<String> getWords() {
         return words;
     }
 
-    public int[] getWordsFreq() {
+    public List<Integer> getWordsFreq() {
         return wordsFreq;
     }
 }

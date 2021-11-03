@@ -45,6 +45,10 @@ public class InvertedListObj {
 
     }
 
+    public int getBlockCnt() {
+        return blockCnt;
+    }
+
     public int getPostingCnt() {
         return postingCnt;
     }
@@ -75,7 +79,7 @@ public class InvertedListObj {
         return docIdBlockArray;
     }
 
-    public int[] getFreqBlockArray(int start, int block){
+    public int[] getFreqBlockArray(int start, int block) {
         index = start;
         int length = block == blockCnt - 1 ? postingCnt - 64 * block : 64;
         int[] freqBlockArray = new int[length];
@@ -85,7 +89,7 @@ public class InvertedListObj {
         return freqBlockArray;
     }
 
-    public int varByteDecode(){
+    public int varByteDecode() {
         int val = 0, shift = 0;
         int b = buffer[index] & 255;
         while (b < 128) {
