@@ -14,9 +14,6 @@ public class QueryProcess {
     private final int avgDocLength;
     private final PriorityQueue<DocObj> pq;
 
-    private final String regex = "[A-Za-z]+[0-9]*$";
-    private final Pattern p = Pattern.compile(regex);
-
     public QueryProcess() {
         lexiconMap = new HashMap<>();
         initLexiconMap();
@@ -141,8 +138,8 @@ public class QueryProcess {
     }
 
 
-    public void closeList(InvertedListObj invertedListObj) {
-        invertedListObj = null;
+    public void closeList(InvertedListObj[] list) {
+        list = null;
     }
 
     public double getScore(InvertedListObj invertedListObj, int fdt, int docId) {
@@ -201,30 +198,32 @@ public class QueryProcess {
                 docId++;
             }
         }
-        for (int i = 0; i < n; i++) {
-            closeList(lps[i]);
-        }
+        closeList(lps);
     }
 
     public void disjunctiveSearch(String query) {
         String[] terms = query.split(" ");
         int n = terms.length;
         InvertedListObj[] lps = new InvertedListObj[terms.length];
-        Map<Integer, DocObj> map = new HashMap<>();
+        DocObj[] map = new DocObj[maxDocId + 1];
         for (int i = 0; i < n; i++) {
             lps[i] = openList(terms[i]);
             updateDocIdScoreMap(lps[i], map);
         }
-        for (int key : map.keySet()) {
-            pq.add(map.get(key));
+        closeList(lps);
+        for (int i = 1; i <= maxDocId; i++) {
+            if (map[i] != null) {
+                pq.add(map[i]);
+            }
             if (pq.size() > 10) {
-                pq.poll();
+                DocObj removeDocObj = pq.poll();
+                removeDocObj = null;
             }
         }
 
     }
 
-    private void updateDocIdScoreMap(InvertedListObj invertedListObj, Map<Integer, DocObj> map) {
+    private void updateDocIdScoreMap(InvertedListObj invertedListObj, DocObj[] map) {
         int blockCnt = invertedListObj.getBlockCnt();
         int docIdStart = invertedListObj.getDocIdStartIndex();
         int freqStart = invertedListObj.getFreqStartIndex();
@@ -237,11 +236,11 @@ public class QueryProcess {
             for (int j = 0; j < docIdArray.length; j++) {
                 int curDocId = docIdArray[j];
                 int curFreq = freqArray[j];
-                if (!map.containsKey(curDocId)) {
+                if (map[curDocId] == null) {
                     DocObj docObj = new DocObj(curDocId, pageWebSiteArray[curDocId]);
-                    map.put(curDocId, docObj);
+                    map[curDocId] = docObj;
                 }
-                DocObj docObj = map.get(curDocId);
+                DocObj docObj = map[curDocId];
                 docObj.getWords().add(curWord);
                 docObj.getWordsFreq().add(curFreq);
                 double score = getScore(invertedListObj, curFreq, curDocId);
@@ -307,23 +306,17 @@ public class QueryProcess {
         int end;
         for (end = 0; end < Math.min(len, 20); end++) {
             String curWord = wordArray[end];
-            if (curWord.length() > 20) {
-                continue;
-            }
-            Matcher isValid = p.matcher(curWord);
-            if (isValid.matches()) {
-                if (set.contains(curWord)) {
-                    maxCount += 1;
-                }
+            if (set.contains(curWord)) {
+                maxCount += 1;
             }
         }
         int curCount = maxCount;
         while (end < len) {
-            if (set.contains(wordArray[start])) {
+            if (set.contains(wordArray[start].toLowerCase())) {
                 curCount -= 1;
             }
             start += 1;
-            if (set.contains(wordArray[end])) {
+            if (set.contains(wordArray[end].toLowerCase())) {
                 curCount += 1;
             }
             if (curCount > maxCount) {
@@ -333,7 +326,10 @@ public class QueryProcess {
             end += 1;
         }
         StringBuilder sb = new StringBuilder();
-        for (int i = index; i < Math.min(index + 20, len); i++) {
+        for (int i = index; i < Math.min(index + 25, len); i++) {
+            if (wordArray[i].length() > 20) {
+                continue;
+            }
             sb.append(wordArray[i]).append(" ");
         }
         return sb.append("...").toString();
