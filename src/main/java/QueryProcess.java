@@ -1,14 +1,21 @@
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class QueryProcess {
 
     private final Map<String, String[]> lexiconMap;
     private final String[] pageWebSiteArray;
     private final int[] pageLengthArray;
+    private final long[] docTextStartIndexArray;
+    private final int[] docTextLengthArray;
     private final int maxDocId;
     private final int avgDocLength;
     private final PriorityQueue<DocObj> pq;
+
+    private final String regex = "[A-Za-z]+[0-9]*$";
+    private final Pattern p = Pattern.compile(regex);
 
     public QueryProcess() {
         lexiconMap = new HashMap<>();
@@ -17,6 +24,8 @@ public class QueryProcess {
         maxDocId = FileUtils.getDocCnt();
         pageWebSiteArray = new String[maxDocId + 1];
         pageLengthArray = new int[maxDocId + 1];
+        docTextStartIndexArray = new long[maxDocId + 1];
+        docTextLengthArray = new int[maxDocId + 1];
         initPageInfo();
         String baseInfo = FileUtils.getLineFromFile(FileUtils.PAGE_TABLE_FILE_PATH, maxDocId + 1);
         long allDocLength = Long.parseLong(baseInfo.split(" ")[1]);
@@ -40,10 +49,12 @@ public class QueryProcess {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] items = line.split(" ");
-                if (items.length == 3) {
+                if (items.length == 5) {
                     int index = Integer.parseInt(items[0]);
                     pageWebSiteArray[index] = items[1];
                     pageLengthArray[index] = Integer.parseInt(items[2]);
+                    docTextStartIndexArray[index] = Long.parseLong(items[3]);
+                    docTextLengthArray[index] = Integer.parseInt(items[4]);
                 }
             }
         } catch (IOException e) {
@@ -143,7 +154,7 @@ public class QueryProcess {
     }
 
     public void conjunctiveSearch(String query) {
-        String[] terms = query.split("\\+");
+        String[] terms = query.split(" ");
         int n = terms.length;
         InvertedListObj[] lps = new InvertedListObj[terms.length];
         for (int i = 0; i < n; i++) {
@@ -196,7 +207,7 @@ public class QueryProcess {
     }
 
     public void disjunctiveSearch(String query) {
-        String[] terms = query.split("\\+");
+        String[] terms = query.split(" ");
         int n = terms.length;
         InvertedListObj[] lps = new InvertedListObj[terms.length];
         Map<Integer, DocObj> map = new HashMap<>();
@@ -254,6 +265,10 @@ public class QueryProcess {
                 result.append(docObjWords.get(i)).append(":").append(docObjWordsFreq.get(i)).append(" ");
             }
             result.append(")");
+            String snippet = generateSnippet(docObj);
+            if (snippet.length() > 0) {
+                result.append("\n").append(snippet);
+            }
             results[index] = result.toString();
             index--;
         }
@@ -263,25 +278,91 @@ public class QueryProcess {
         pq.clear();
     }
 
+    public String generateSnippet(DocObj docObj) {
+        try {
+            int docId = docObj.getDocId();
+            List<String> docObjWords = docObj.getWords();
+            long docTextStartIndex = docTextStartIndexArray[docId];
+            int docTextLength = docTextLengthArray[docId];
+            byte[] buffer = new byte[docTextLength];
+            InputStream inputStream = new FileInputStream(FileUtils.DOC_TEXT_FILE);
+            long skipBytes = inputStream.skip(docTextStartIndex);
+            if (skipBytes == docTextStartIndex && inputStream.read(buffer) != -1) {
+                String text = new String(buffer);
+                return minSlidingWindow(text, docObjWords);
+            }
+            return "";
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    public String minSlidingWindow(String text, List<String> docObjWords) {
+        Set<String> set = new HashSet<>(docObjWords);
+        String[] wordArray = text.split(" ");
+        int len = wordArray.length;
+        int maxCount = 0;
+        int start = 0, index = 0;
+        int end;
+        for (end = 0; end < Math.min(len, 20); end++) {
+            String curWord = wordArray[end];
+            if (curWord.length() > 20) {
+                continue;
+            }
+            Matcher isValid = p.matcher(curWord);
+            if (isValid.matches()) {
+                if (set.contains(curWord)) {
+                    maxCount += 1;
+                }
+            }
+        }
+        int curCount = maxCount;
+        while (end < len) {
+            if (set.contains(wordArray[start])) {
+                curCount -= 1;
+            }
+            start += 1;
+            if (set.contains(wordArray[end])) {
+                curCount += 1;
+            }
+            if (curCount > maxCount) {
+                maxCount = curCount;
+                index = start;
+            }
+            end += 1;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = index; i < Math.min(index + 20, len); i++) {
+            sb.append(wordArray[i]).append(" ");
+        }
+        return sb.append("...").toString();
+    }
+
+
     public static void main(String[] args) {
 
         QueryProcess queryProcess = new QueryProcess();
         System.out.println("build success.");
         while (true) {
-            Scanner scanner = new Scanner(System.in);
-            System.out.print("Input search mode (and / or): ");
-            String mode = scanner.nextLine();
-            System.out.print("Input key words: ");
-            String keywords = scanner.nextLine();
-            long startTime = System.currentTimeMillis();
-            if (mode.equals("and")) {
-                queryProcess.conjunctiveSearch(keywords);
-            } else {
-                queryProcess.disjunctiveSearch(keywords);
+            try {
+                Scanner scanner = new Scanner(System.in);
+                System.out.print("Input search mode (and / or): ");
+                String mode = scanner.nextLine();
+                System.out.print("Input key words: ");
+                String keywords = scanner.nextLine();
+                long startTime = System.currentTimeMillis();
+                if (mode.equals("and")) {
+                    queryProcess.conjunctiveSearch(keywords);
+                } else {
+                    queryProcess.disjunctiveSearch(keywords);
+                }
+                queryProcess.getTop10Res();
+                long endTime = System.currentTimeMillis();
+                System.out.println("Run Time： " + (endTime - startTime) + "ms");
+            } catch (Exception e) {
+                System.out.println("Find error, please input again");
             }
-            queryProcess.getTop10Res();
-            long endTime = System.currentTimeMillis();
-            System.out.println("Run Time： " + (endTime - startTime) + "ms");
         }
     }
 }

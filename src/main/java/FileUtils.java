@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 public class FileUtils {
 
     public static final String PAGE_TABLE_FILE_PATH = "pageTable.txt";
+    public static final String DOC_TEXT_FILE = "docText.bin";
     public static final String INVERTED_LIST_BIN_FILE_PATH = "invertedList.bin";
     public static final String LEXICON_FILE_PATH = "lexicon.txt";
     public static final String PARTITION_FILE_PATH = "part.txt";

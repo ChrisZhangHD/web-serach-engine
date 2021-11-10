@@ -1,6 +1,4 @@
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,14 +12,19 @@ public class PostingsHandle {
     private final Pattern p = Pattern.compile(regex);
     private final Map<String, StringBuilder> word2DocIdFreqListMap = new HashMap<>();
     private final BufferedWriter pageTableWriter;
+    private final OutputStream docTextOutputStream;
     private long allDocLength = 0L;
     private int docId = 0;
+    private long docTextIndex = 0;
 
     public PostingsHandle() throws IOException {
         this.pageTableWriter = new BufferedWriter(new FileWriter(FileUtils.PAGE_TABLE_FILE_PATH));
+        this.docTextOutputStream = new FileOutputStream(FileUtils.DOC_TEXT_FILE);
     }
 
     public void buildDocPosingIndex(String docText) throws IOException {
+        byte[] textByteArray = docText.getBytes();
+        int textByteLen = textByteArray.length;
         String[] docTextArray = docText.split(" ");
         int docLength = docTextArray.length - 1;
         if (docLength == 0) {
@@ -32,7 +35,9 @@ public class PostingsHandle {
         String curWord;
         String website = docTextArray[0];
         allDocLength += docLength;
-        pageTableWriter.write(docId + " " + website + " " + docLength + "\n");
+        docTextOutputStream.write(textByteArray);
+        pageTableWriter.write(docId + " " + website + " " + docLength + " " + docTextIndex + " " + textByteLen + "\n");
+        docTextIndex += textByteLen;
         for (int i = 1; i < docTextArray.length; i++) {
             curWord = docTextArray[i];
             // if the length of word more than 20. Omit it.
@@ -71,8 +76,9 @@ public class PostingsHandle {
 
     }
 
-    public void closePageTableWriter() throws IOException {
+    public void closeWriterAndOutputStream() throws IOException {
         pageTableWriter.write(docId + " " + allDocLength);
+        docTextOutputStream.close();
         pageTableWriter.close();
     }
 }

@@ -42,7 +42,7 @@ public class DocHandle {
                 postingsHandle.writeMapToFile(i);
                 i += 1;
             }
-            postingsHandle.closePageTableWriter();
+            postingsHandle.closeWriterAndOutputStream();
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -51,5 +51,19 @@ public class DocHandle {
     public String parseDoc(String html) {
         Document doc = Jsoup.parse(html);
         return doc.select("TEXT").text();
+    }
+
+    public static void main(String[] args) {
+        try {
+            FileUtils.createFile(FileUtils.PAGE_TABLE_FILE_PATH);
+            FileUtils.createFile(FileUtils.DOC_TEXT_FILE);
+            DocHandle docHandle = new DocHandle();
+            int bufferSize = 1024 * 1024 * 128;
+            String filePath = FileUtils.DATASET_FILE_PATH;
+            docHandle.readFile(filePath, bufferSize);
+            System.out.println("success");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

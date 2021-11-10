@@ -6,6 +6,7 @@ public class Application {
         try {
             long startTime = System.currentTimeMillis();
             FileUtils.createFile(FileUtils.PAGE_TABLE_FILE_PATH);
+            FileUtils.createFile(FileUtils.DOC_TEXT_FILE);
             DocHandle docHandle = new DocHandle();
             int bufferSize = 1024 * 1024 * 128;
             String filePath = FileUtils.DATASET_FILE_PATH;
